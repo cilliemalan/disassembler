@@ -57,5 +57,14 @@ are on the to do list:
 - [ ] Non-architecture specific details.
 - [ ] Architecture specific details and enums.
 - [ ] Some documentation, at least JSDoc.
-- [ ] The various helper functions (e.g. `ARM_insn_name`, `Xtensa_sysreg_name`, etc.).
+- [ ] The various helper functions (e.g. getting instruction names).
 - [ ] Figure out some kind of way to garbage collect instances.
+
+# License
+Files in this repo are copyright (c) 2021 Cillié Malan. See [LICENSE] for info.
+
+This library relies on the [Capstone disassembly framework](http://www.capstone-engine.org/).
+The sources for the capstone project,
+including [modifications for this module](https://github.com/cilliemalan/capstone/tree/wasmhost),
+and any binary files produced therefrom, distributed with this library,
+are [Copyright (c) 2013, COSEINC](https://github.com/cilliemalan/capstone/blob/wasmhost/LICENSE.TXT).
