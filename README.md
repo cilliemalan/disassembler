@@ -5,7 +5,7 @@ to WebAssembly and is automatically loaded when `initialize` is called.
 
 # Usage
 ```js
-import { initialize } from 'disassembler';
+import { initialize, Architecture, Mode } from 'disassembler';
 
 async function disassembleStuff() {
 
@@ -32,6 +32,8 @@ async function disassembleStuff() {
     // for the instance.
     capstone.freeInstance(instance);
 }
+
+disassembleStuff().catch(console.error);
 ```
 
 The code above spits out:
