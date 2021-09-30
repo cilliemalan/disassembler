@@ -15,6 +15,9 @@
 # this must be run from the parent dir
 test -f generate.sh && cd ..
 
+
+# convert wasm data
+echo "Converting WASM data into a typescript file..."
 url=$(cat src/web.ts | grep -E -o 'https[a-z:/.0-9]+')
 
 mkdir -p dist/src
@@ -22,3 +25,17 @@ mkdir -p dist/src
 printf 'module.exports = Buffer.from("' > dist/src/wasmdata.js
 curl -s $url | xxd -c 64 -p | tr -d '\n' >> dist/src/wasmdata.js
 printf '", "hex")' >> dist/src/wasmdata.js
+
+
+# convert capstone header
+echo "Converting capstone headers into a typescript file..."
+mkdir -p headerconverter/build
+test ! -d headerconverter/build/capstone \
+    && git clone https://github.com/cilliemalan/capstone \
+       --depth 1\
+       -b wasmhost \
+       headerconverter/build/capstone
+(cd headerconverter/build/capstone && git pull >> /dev/null)
+cmake -B./headerconverter/build -S./headerconverter -G Ninja  >> /dev/null
+cmake --build ./headerconverter/build  >> /dev/null
+headerconverter/build/headerconverter headerconverter/build/capstone/include/capstone/capstone.h > src/capstoneEnums.ts
