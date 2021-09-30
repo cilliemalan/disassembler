@@ -24,6 +24,7 @@
   "scripts": {
     "build": "tsc",
     "test": "tsc && node dist/tests/",
+    "prepare": "bash scripts/generate.sh && tsc",
     "prepack": "bash scripts/generate.sh && tsc",
     "prepublishOnly": "node dist/tests/"
   },
