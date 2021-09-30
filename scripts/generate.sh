@@ -10,12 +10,15 @@
 # for the browser) the browser will automatically decompress
 # it because of the Content-Encoding header.
 
+
+
 # this must be run from the parent dir
 test -f generate.sh && cd ..
 
 url=$(cat src/web.ts | grep -E -o 'https[a-z:/.0-9]+')
 
-mkdir -p wasm
-echo 'export const wasmData = `' > wasm/wasm.ts
-curl -s $url | xxd -c 64 -p >> wasm/wasm.ts
-echo '`;' >> wasm/wasm.ts
+mkdir -p dist/src
+
+printf 'module.exports = Buffer.from("' > dist/src/wasmdata.js
+curl -s $url | xxd -c 64 -p | tr -d '\n' >> dist/src/wasmdata.js
+printf '", "hex")' >> dist/src/wasmdata.js
