@@ -29,12 +29,12 @@
     "prepublishOnly": "node dist/tests/"
   },
   "bugs": {
-    "url": "https://github.com/cilliemalan/elfinfo/issues"
+    "url": "https://github.com/cilliemalan/disassembler/issues"
   },
   "directories": {
     "test": "test"
   },
-  "homepage": "https://github.com/cilliemalan/elfinfo#readme",
+  "homepage": "https://github.com/cilliemalan/disassembler#readme",
   "repository": "https://github.com/cilliemalan/disassembler",
   "author": "Cillié Malan <cilliemalan@gmail.com>",
   "license": "MIT",

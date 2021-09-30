@@ -80,7 +80,7 @@ are on the to do list:
 - [ ] Figure out some kind of way to garbage collect instances.
 
 # License
-Files in this repo are copyright (c) 2021 Cillié Malan. See [LICENSE] for info.
+Files in this repo are copyright (c) 2021 Cillié Malan. See [LICENSE](LICENSE) for info.
 
 This library relies on the [Capstone disassembly framework](http://www.capstone-engine.org/).
 The sources for the capstone project,
