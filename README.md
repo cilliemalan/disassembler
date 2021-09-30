@@ -48,6 +48,23 @@ sxtb.w r6, sb, ror #8
 vaddw.u16 q8, q8, d18
 ```
 
+## Note about web
+The Capstone wasm file is quite large (5Mb). In order
+to save space, it is not included when packed with
+webpack or other tools but rather will be downloaded
+by calling `fetch`. The wasm file is stored on a CDN,
+is compressed to about 500kb, and may be cached indefinitely.
+
+If this library is included from a regular node project,
+the wasm data is stored as hex in a javascript file generated
+when this library is published.
+
+This works by specifying a different main file for `browser` in
+the [package.json](package.json#L6) file. I'm not sure how one
+can go about overriding this behaviour. The reason it's completely
+separate is to prevent webpack from including 1Mb of hex stuff
+unnecessarily.
+
 # Work in Progress
 This module does basic disassembly right now. It does not
 yet support all the various architectures. These things
