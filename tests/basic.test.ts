@@ -54,7 +54,7 @@ category("Basic Operations", () => {
 
             // print out the results
             for (let insn of instructions) {
-                console.log(`${insn.mnemonic} ${insn.operands}`);
+                //console.log(`${insn.mnemonic} ${insn.operands}`);
             }
 
             // Important! Free the instance after use.
