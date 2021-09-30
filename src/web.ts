@@ -3,7 +3,7 @@ import { Capstone } from './capstoneTypes';
 
 export * from './capstoneTypes';
 
-const url = 'https://cdn.chills.co.za/c2b224d2.wasm';
+const url = 'https://cdn.chills.co.za/dfb7275a.wasm';
 async function load() {
     return await (await fetch(url)).arrayBuffer();
 }
