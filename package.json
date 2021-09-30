@@ -25,7 +25,8 @@
     "build": "tsc",
     "test": "tsc && node dist/tests/",
     "prepare": "bash scripts/generate.sh && tsc",
-    "prepublishOnly": "tsc && node dist/tests/"
+    "prepack": "tsc",
+    "prepublishOnly": "node dist/tests/"
   },
   "bugs": {
     "url": "https://github.com/cilliemalan/elfinfo/issues"
