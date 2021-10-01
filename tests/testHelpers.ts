@@ -13,9 +13,7 @@ export function testWithInstance(name: string, arch: Architecture, mode: Mode | 
                 await p;
             }
         } catch (e) {
-            capstone.freeInstance(instance);
             throw e;
         }
-        capstone.freeInstance(instance);
     });
 }

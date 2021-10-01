@@ -35,6 +35,8 @@ export enum Architecture {
 
 /** The mode for the architecture (e.g. Thumb for Arm or Bits64 for X86) */
 export enum Mode {
+    /** No mode/default */
+    Default = 0,
     /** little-endian mode (default mode) */
     LittleEndian = 0,
     /** 32-bit ARM */
@@ -252,16 +254,12 @@ export interface Instruction {
  * Created by calling @see Capstone.createInstance
  */
 export interface CapstoneInstance {
-    /** Indicates if this instance is still valid or
-     * if the underlying WebAssembly resources have been freed.
-     */
-    readonly valid: boolean;
 
     /** The architecure this instance disassembles for. */
     readonly architecture: Architecture;
 
     /** Any mode flags this instance is configured for. */
-    readonly mode?: Mode
+    readonly mode: Mode
 
     /** Disassemble some binary code 
      * @param code The binary code
@@ -278,6 +276,4 @@ export interface Capstone {
      * @param mode Any specific mode flags for the architecture (e.g 64-bit for x86 or Thumb for Arm).
      */
     createInstance: (architecture: Architecture, mode?: Mode) => CapstoneInstance;
-    /** Free an instance of the framework. */
-    freeInstance: (instance: CapstoneInstance) => void;
 };

@@ -26,11 +26,6 @@ async function disassembleStuff() {
     for (let insn of instructions) {
         console.log(`${insn.mnemonic} ${insn.operands}`);
     }
-
-    // Important! Free the instance after use.
-    // doing so frees the WebAssembly memory
-    // for the instance.
-    capstone.freeInstance(instance);
 }
 
 disassembleStuff().catch(console.error);
@@ -77,7 +72,7 @@ are on the to do list:
 - [ ] Architecture specific details and enums.
 - [ ] Some documentation, at least JSDoc.
 - [ ] The various helper functions (e.g. getting instruction names).
-- [ ] Figure out some kind of way to garbage collect instances.
+- [x] Figure out some kind of way to garbage collect instances.
 
 # License
 Files in this repo are copyright (c) 2021 Cillié Malan. See [LICENSE](LICENSE) for info.

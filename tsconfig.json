@@ -5,6 +5,10 @@
     "tsBuildInfoFile": "./.buildcache",
     "target": "es2017",
     "module": "commonjs",
+    "lib": [
+      "ESNext.WeakRef",
+      "dom"
+    ],
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,
     "strict": true,

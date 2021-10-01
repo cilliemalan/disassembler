@@ -69,7 +69,7 @@ interface CapstoneExports {
     free: (a: number) => void;
 }
 
-async function loadCapstoneInternal(load: () => Promise<ArrayBuffer>) {
+async function loadCapstoneInternal(load: () => Promise<ArrayBuffer>): Promise<Capstone> {
 
 
     const wasmData = await load();
@@ -224,12 +224,13 @@ async function loadCapstoneInternal(load: () => Promise<ArrayBuffer>) {
         return helpers;
     })();
 
-    class CapstoneInstanceImpl implements CapstoneInstance {
+    class CapstoneInstanceImpl {
         #valid: boolean;
         #handle: number;
         #instructionPointer: number;
         #stateMemory: number;
         #architecture: Architecture;
+        #mode: Mode;
 
         get valid() {
             return this.#valid;
@@ -239,10 +240,11 @@ async function loadCapstoneInternal(load: () => Promise<ArrayBuffer>) {
             return this.#handle;
         }
 
-        constructor(handle: number, architecture: Architecture) {
+        constructor(handle: number, architecture: Architecture, mode: Mode) {
             this.#handle = handle;
             this.#valid = true;
             this.#architecture = architecture;
+            this.#mode = mode;
 
             this.#instructionPointer = exports.cs_malloc(this.#handle);
             this.#stateMemory = exports.malloc(16);
@@ -310,42 +312,88 @@ async function loadCapstoneInternal(load: () => Promise<ArrayBuffer>) {
         }
     }
 
-    return {
-        createInstance: (architecture: Architecture, mode?: Mode) => {
-            // allocate memory for the reference to the handle pointer
-            const handlemem = exports.malloc(4);
-            if (handlemem == 0) {
-                throw new Error("Could not allocate memory");
-            }
+    // wraps an instance to track garbage collection
+    class CapstoneInstanceWrapper implements CapstoneInstance {
+        #impl: CapstoneInstanceImpl;
+        #architecture: Architecture;
+        #mode: Mode;
 
-            // allocate the capstone instance
-            const result = exports.cs_open(
-                architecture,
-                mode ?? Mode.LittleEndian,
-                handlemem);
+        constructor(impl: CapstoneInstanceImpl, architecture: Architecture, mode: Mode) {
+            this.#impl = impl;
+            this.#architecture = architecture;
+            this.#mode = mode;
+        }
+        get architecture() { return this.#architecture; }
+        get mode() { return this.#mode; }
+        disassemble(code: Uint8Array, address?: bigint | undefined) {
+            return this.#impl.disassemble(code, address);
+        }
+    }
 
-            if (result != 0) {
-                throw new Error("Could not create instance. Got error code " + result);
-            }
+    // tracks all created instances
+    const instances: {
+        wrapper: WeakRef<CapstoneInstanceWrapper>;
+        instance: CapstoneInstanceImpl;
+    }[] = [];
 
-            // get the handle pointer and free the memory for the reference
-            const handlePointer = helpers.getUInt32(handlemem);
-            exports.free(handlemem);
+    function cleanup() {
+        for (let instance of instances) {
+        }
+    }
 
-            // return the instance wrapper
-            return new CapstoneInstanceImpl(handlePointer, architecture);
-        },
-        freeInstance: (instance: CapstoneInstance) => {
-            const inst = instance as CapstoneInstanceImpl;
-            if (inst.valid) {
-                const handle = inst.handle;
-                inst.freeResources();
-                if (handle) {
-                    exports.cs_close(handle);
-                }
+    function createInstance(architecture: Architecture, mode: Mode = Mode.Default): CapstoneInstance {
+        // allocate memory for the reference to the handle pointer
+        const handlemem = exports.malloc(4);
+        if (handlemem == 0) {
+            throw new Error("Could not allocate memory");
+        }
+
+        // allocate the capstone instance
+        const result = exports.cs_open(
+            architecture,
+            mode,
+            handlemem);
+
+        if (result != 0) {
+            throw new Error("Could not create instance. Got error code " + result);
+        }
+
+        // get the handle pointer and free the memory for the reference
+        const handlePointer = helpers.getUInt32(handlemem);
+        exports.free(handlemem);
+
+        // return the instance wrapper
+        const instance = new CapstoneInstanceImpl(handlePointer, architecture, mode);
+        const wrappedInstance = new CapstoneInstanceWrapper(instance, architecture, mode);
+        instances.push({ instance, wrapper: new WeakRef(wrappedInstance) });
+
+        return wrappedInstance;
+    }
+
+    function freeInstance(instance: CapstoneInstanceImpl) {
+        if (instance.valid) {
+            const handle = instance.handle;
+            instance.freeResources();
+            if (handle) {
+                exports.cs_close(handle);
             }
         }
-    };
+    }
+
+    // periodially clean up instances
+    setInterval(() => {
+        for (let i = 0; i < instances.length;) {
+            const instance = instances[i];
+            if (instance.wrapper.deref() === undefined) {
+                freeInstance(instance.instance);
+                instances.splice(i, 1);
+            } else {
+                i++;
+            }
+        }
+    }, 1000);
+
+    return { createInstance };
 }
 
 export async function loadCapstoneAsync(load: () => Promise<ArrayBuffer>): Promise<Capstone> {

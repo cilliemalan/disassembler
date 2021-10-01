@@ -13,9 +13,6 @@ category("Basic Operations", () => {
     test('It can create and free an instance ok', async () => {
         const capstone = await initialize();
         const instance = capstone.createInstance(Architecture.ARM);
-        if (instance) {
-            capstone.freeInstance(instance);
-        }
 
         assert.ok(instance);
     });
@@ -23,9 +20,6 @@ category("Basic Operations", () => {
     test('It can create and free an instance ok a second time', async () => {
         const capstone = await initialize();
         const instance = capstone.createInstance(Architecture.ARM);
-        if (instance) {
-            capstone.freeInstance(instance);
-        }
 
         assert.ok(instance);
     });
@@ -56,15 +50,10 @@ category("Basic Operations", () => {
             for (let insn of instructions) {
                 //console.log(`${insn.mnemonic} ${insn.operands}`);
             }
-
-            // Important! Free the instance after use.
-            // doing so frees the WebAssembly memory
-            // for the instance.
-            capstone.freeInstance(instance);
         }
 
         await disassembleStuff();
 
-    })
+    });
 
 });
