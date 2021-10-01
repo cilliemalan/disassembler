@@ -2,9 +2,7 @@ import { readFileSync } from 'fs';
 import { join, resolve } from 'path';
 import { Architecture, Capstone, CapstoneInstance, Instruction, InstructionDetail, Mode } from './capstoneTypes';
 
-export * from './capstoneEnums';
-
-let capstone: Capstone | undefined;
+export let capstone: Capstone | undefined;
 
 const memory = new WebAssembly.Memory({ initial: 96 });
 
