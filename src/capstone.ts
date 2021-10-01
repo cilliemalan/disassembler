@@ -4,6 +4,11 @@ import { Architecture, Capstone, CapstoneInstance, Instruction, InstructionDetai
 
 export let capstone: Capstone | undefined;
 
+// the capstone framework interface will be 
+// put on the global object (window or global)
+// if possible on this symbol.
+const capstoneGlobalSymbol = Symbol.for("__capstone");
+
 const memory = new WebAssembly.Memory({ initial: 96 });
 
 const wasmImports = {
@@ -67,6 +72,15 @@ interface CapstoneExports {
     cs_disasm_iter: (handlePointer: number, codePointerPointer: number, sizePointer: number, addressPointer: number, instructionPointer: number) => number;
     malloc: (a: number) => number;
     free: (a: number) => void;
+}
+
+function putCapstoneOnGlobal(cappy: Capstone): any {
+    let _g: any;
+    if (typeof global !== undefined) {
+        (global as any)[capstoneGlobalSymbol] = cappy;
+    } else if (typeof window !== undefined) {
+        (window as any)[capstoneGlobalSymbol] = cappy;
+    }
 }
 
 async function loadCapstoneInternal(load: () => Promise<ArrayBuffer>): Promise<Capstone> {
@@ -400,6 +414,10 @@ export async function loadCapstoneAsync(load: () => Promise<ArrayBuffer>): Promi
     if (capstone) {
         return Promise.resolve(capstone);
     } else {
-        return loadCapstoneInternal(load).then((c: Capstone) => (capstone = c, c));
+        return loadCapstoneInternal(load).then((c: Capstone) => {
+            capstone = c;
+            putCapstoneOnGlobal(c);
+            return c;
+        });
     }
 }
