@@ -4,6 +4,11 @@ import path from 'path';
 import { AsyncLocalStorage } from 'async_hooks';
 import { performance } from 'perf_hooks';
 
+const { stdout, stderr, argv } = process;
+let passed = 0, failed = 0;
+let totaltime = 0;
+const startTime = performance.now();
+
 const tests: { name: string, fn: () => any }[] = [];
 
 interface Category {
@@ -12,6 +17,36 @@ interface Category {
 }
 
 const currentCategoryStorage = new AsyncLocalStorage<Category | undefined>();
+const categoryPromises: { promise: Promise<void>, name: string }[] = [];
+
+function getErrorMessage(e: any): string | undefined {
+    return e ? (e.stack ?? (e.toString ? e.toString() : `${e}`)) : undefined;
+}
+
+function printErrorMessage(message: string | undefined) {
+    if (message) {
+        message = message.split('\n').map(l => `    ${l}`).join('\n');
+        stderr.write(message, 'utf-8');
+        stderr.write('\n', 'utf-8');
+    }
+}
+
+function getTimeString(time?: number) {
+    return time !== undefined && time > 100 ? ` (${time.toFixed(0)}ms)` : '';
+}
+
+function printStarting(name: string) {
+    stdout.write(`👉 ${name}`, 'utf-8');
+}
+
+function printSuccess(name: string, time?: number) {
+    stdout.write(`\r✔️  ${name}${getTimeString(time)}\n`, 'utf-8');
+}
+
+function printFailure(name: string, message?: string, time?: number) {
+    stderr.write(`\r❌ ${name}${getTimeString(time)}\n`, 'utf-8');
+    printErrorMessage(message);
+}
 
 export function category(name: string, stuff: () => void | Promise<void>) {
 
@@ -21,7 +56,10 @@ export function category(name: string, stuff: () => void | Promise<void>) {
         name = `${prev.name} - ${name}`;
     }
 
-    currentCategoryStorage.run({ name, prev }, stuff);
+    const promise = currentCategoryStorage.run({ name, prev }, stuff);
+    if (promise) {
+        categoryPromises.push({ promise, name });
+    }
 }
 
 export function test(name: string, fn: () => any) {
@@ -38,51 +76,62 @@ async function findTests() {
     for (let test of files) {
         require(path.join(__dirname, test));
     }
+
+    await Promise.allSettled(
+        categoryPromises.map(({ promise, name }) =>
+            promise.catch(e => {
+                printFailure(name, getErrorMessage(e));
+                failed++;
+            })));
 }
 
 async function run() {
-    const { stdout, stderr } = process;
-    let passed = 0, failed = 0;
-    let totaltime = 0;
+
+    const filter = argv[2] ? new RegExp(argv[2]) : undefined;
+    const timeUntilRun = performance.now() - startTime;
+    totaltime += timeUntilRun;
+    const timeUntilRunStr = getTimeString(timeUntilRun)
+    if (timeUntilRunStr) {
+        stdout.write(`Bootstrapped tests${timeUntilRunStr}\n`, 'utf-8');
+    }
+
     for (const { name, fn } of tests) {
-        let success = false;
-        let stack: string | undefined;
-        let time: number = 0;
-        try {
-            stdout.write(`👉 ${name}`, 'utf-8');
+
+        if (!filter || filter.test(name)) {
+
+            let success = false;
+            let errorMessage: string | undefined;
+            let start = 0;
+            let time = 0;
+            try {
+                printStarting(name);
+                stdout.uncork();
+
+                start = performance.now();
+                const result = fn();
+                if (result instanceof Promise) {
+                    await result;
+                }
+                time = performance.now() - start;
+                success = true;
+            } catch (e: any) {
+                time = performance.now() - start;
+                success = false;
+                errorMessage = getErrorMessage(e);
+            }
+
+            stdout.cork();
+            stderr.cork();
+            if (success) {
+                printSuccess(name, time);
+                passed++
+            } else {
+                printFailure(name, errorMessage, time);
+                failed++;
+            }
             stdout.uncork();
-
-            const start = performance.now();
-            const result = fn();
-            if (result instanceof Promise) {
-                await result;
-            }
-            const end = performance.now();
-            time = end - start;
-            success = true;
-        } catch (e: any) {
-            success = false;
-            stack = e ? (e.stack ?? (e.toString ? e.toString() : `${e}`)) : undefined;
+            stderr.uncork();
         }
-
-        stdout.cork();
-        stderr.cork();
-        const timestr = time > 100 ? ` (${time.toFixed(0)}ms)` : '';
-        totaltime += time;
-        if (success) {
-            stdout.write(`\r✔️ ${name}${timestr}\n`, 'utf-8');
-            passed++
-        } else {
-            stderr.write(`\r❌ ${name}${timestr}\n`, 'utf-8');
-            failed++;
-            if (stack) {
-                stack = stack.split('\n').map(l => `    ${l}`).join('\n');
-                stderr.write(stack, 'utf-8');
-                stderr.write('\n', 'utf-8');
-            }
-        }
-        stdout.uncork();
-        stderr.uncork();
     }
 
     if (failed) {
