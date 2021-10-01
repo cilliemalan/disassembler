@@ -1,6 +1,6 @@
 {
   "name": "disassembler",
-  "version": "0.2.0-beta",
+  "version": "0.2.1-beta",
   "description": "A library for disassembling various types of machine code.",
   "main": "dist/src/node.js",
   "browser": "dist/src/web.js",
